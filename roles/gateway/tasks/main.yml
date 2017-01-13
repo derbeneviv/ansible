@@ -9,6 +9,7 @@
   with_items:
     - iptables
     - iproute2
+    - iptables-persistent
 
 - name: include interfaces.d
   lineinfile: >
