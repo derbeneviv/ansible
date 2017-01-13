@@ -1,30 +1,30 @@
 ---
 # tasks file for gateway
 
-#- name: Update apt cache
-#  apt: update_cache=yes
+- name: Update apt cache
+  apt: update_cache=yes
 
-#- name: Install required packages
-#  apt: pkg={{ item }}
-#  with_items:
-#    - iptables
-#    - iproute2
-#
-#- name: include interfaces.d
-#  lineinfile: >
-#     regexp="^source\ \/etc\/network\/interfaces.d\/\*"
-#     line="source /etc/network/interfaces.d/*"
-#     dest=/etc/network/interfaces
-#     state=present
-#     insertafter=EOF
-#
-#- name: edit rt_tables
-#  copy: src="rt_tables"
-#        dest=/etc/iproute2/rt_tables
-#        owner=root
-#        group=root
-#        mode=0644
-# 
+- name: Install required packages
+  apt: pkg={{ item }}
+  with_items:
+    - iptables
+    - iproute2
+
+- name: include interfaces.d
+  lineinfile: >
+     regexp="^source\ \/etc\/network\/interfaces.d\/\*"
+     line="source /etc/network/interfaces.d/*"
+     dest=/etc/network/interfaces
+     state=present
+     insertafter=EOF
+
+- name: edit rt_tables
+  copy: src="rt_tables"
+        dest=/etc/iproute2/rt_tables
+        owner=root
+        group=root
+        mode=0644
+ 
 - sysctl:
     name: net.ipv4.ip_forward
     value: 1
