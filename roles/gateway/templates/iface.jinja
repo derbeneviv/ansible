@@ -1,0 +1,28 @@
+auto {{ item.value.device }}
+{% if item.value.type == 'static' %}
+iface {{ item.value.device }}  inet static
+{% if item.value.address is defined %}
+address {{ item.value.address }}
+{% endif %}
+{% if item.value.netmask is defined %}
+netmask {{ item.value.netmask }}
+{% endif %}
+{% if item.value.gateway is defined %}
+gateway {{ item.value.gateway }}
+{% endif %}
+{% endif %}
+{% if item.value.type== 'dhcp' %}
+iface {{ item.value.device }}  inet dhcp
+{% endif %}
+
+{% if item.value.route is defined %}
+{% for i in item.value.route %}
+up ip route add {% if i.default is defined and i.default==True %}default{% else %}{{ i.network }}{%endif%} {% if i.gw is defined  %}via {{ i.gw }}{% endif %} {% if i.dev is defined  %}dev {{ i.dev }}{% endif %} {% if i.src is defined  %}src {{ i.src }}{% endif %} {% if i.table is defined  %}table {{ i.table }}{% endif %}
+
+down ip route del {% if i.default is defined and i.default==True %}default{% else %}{{ i.network }}{%endif%} {% if i.gw is defined  %}via {{ i.gw }}{% endif %} {% if i.dev is defined  %}dev {{ i.dev }}{% endif %} {% if i.src is defined  %}src {{ i.src }}{% endif %} {% if i.table is defined  %}table {{ i.table }}{% endif %}
+
+{% endfor %}
+{% endif %}
+{% if item.value.rule is defined %}
+up ip rule add from {{ item.value.address }} table {{ item.value.rule }}
+{% endif %}

@@ -1,0 +1,76 @@
+---
+# tasks file for gateway
+
+#- name: Update apt cache
+#  apt: update_cache=yes
+
+#- name: Install required packages
+#  apt: pkg={{ item }}
+#  with_items:
+#    - iptables
+#    - iproute2
+#
+#- name: include interfaces.d
+#  lineinfile: >
+#     regexp="^source\ \/etc\/network\/interfaces.d\/\*"
+#     line="source /etc/network/interfaces.d/*"
+#     dest=/etc/network/interfaces
+#     state=present
+#     insertafter=EOF
+#
+#- name: edit rt_tables
+#  copy: src="rt_tables"
+#        dest=/etc/iproute2/rt_tables
+#        owner=root
+#        group=root
+#        mode=0644
+# 
+- sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: yes
+
+- name: create interfaces.d
+  file: path=/etc/network/interfaces.d  state=directory
+
+- name: create iface files
+  template: src="iface.jinja" 
+            dest=/etc/network/interfaces.d/ifcfg-{{ item.value.device }}
+  with_dict: "{{ ifaces }}"
+  when: ifaces is defined
+
+- name: ifup ifaces
+  command: ifup {{ item.value.device }}
+  with_dict: "{{ ifaces }}"
+  when: ifaces is defined
+
+- name: flush default route
+  command: ip r d default
+  ignore_errors: True
+- name: load balance routes
+  command: ip route add default scope global nexthop via {{ ifaces.wan1.address }} dev {{ ifaces.wan1.device }} weight {{ ifaces.wan1.weight }} nexthop via {{ ifaces.wan2.address }}  dev {{ ifaces.wan2.device }} weight {{ ifaces.wan2.weight }}
+  ignore_errors: True
+
+#default iptables
+
+- name: flush 
+  iptables: flush=true
+- name: flush nat
+  iptables:
+    table=nat 
+    flush=true
+- iptables_raw: > 
+    name=block_incoming
+    rules=' -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+            -A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
+            -A INPUT -i lo -j ACCEPT
+            -A INPUT -i {{ ifaces.lan.device }} -j ACCEPT
+            -P INPUT DROP
+            -P FORWARD ACCEPT
+            -P OUTPUT ACCEPT'
+- iptables_raw: >
+    name=forwarding
+    table=nat
+    rules=' -A POSTROUTING -s {{ ifaces.lan.network }}/{{ ifaces.lan.netmask }} -o {{ ifaces.wan1.device }} -j MASQUERADE
+            -A POSTROUTING -s {{ ifaces.lan.network }}/{{ ifaces.lan.netmask }} -o {{ ifaces.wan2.device }} -j MASQUERADE'
+

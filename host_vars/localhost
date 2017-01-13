@@ -1,0 +1,57 @@
+ifaces:
+    lan:
+      device: 'eth0' 
+      type: 'static'
+      address: '10.0.0.2'
+      netmask: 255.255.255.0
+      network: 10.0.0.0
+      route:
+         - network: '10.0.0.0/24'
+           dev: 'eth0'
+           table: 'isp1'
+         - network: '10.0.0.0/24'
+           dev: 'eth0'
+           table: 'isp2'
+    wan1: 
+      device: 'eth1'
+      type: 'static'
+      address: '192.168.1.36'
+      netmask: 255.255.255.0
+      gateway: 192.168.1.1
+      network: 192.168.1.0
+      weight: 1
+      route: 
+         - network: '192.168.1.0/24'
+           src: '192.168.1.36'
+           dev: 'eth1'
+           table: 'isp1'
+         - default: yes
+           gw: '192.168.1.1'
+           table: 'isp1'
+         - network: '192.168.1.0/24'
+           dev: 'eth1'
+           table: 'isp2'
+      rule: 'isp1'
+    wan2:
+      device: 'eth2'
+      type: 'static'
+      address: '192.168.2.37'
+      netmask: 255.255.255.0
+      network: 192.168.2.0
+      weight: 1
+      route: 
+        - network: '192.168.2.0/24'
+          src: '192.168.2.37'
+          dev: 'eth2'
+          table: 'isp2'
+        - default: yes
+          gw: '192.168.2.1'
+          table: 'isp2'
+        - network: '192.168.2.0/24'
+          dev: 'eth2'
+          table: 'isp1'
+      rule: 'isp2'
+links:
+    - local: 'eth0'
+    - wan1: 'eth1'
+    - wan2: 'eth2'
